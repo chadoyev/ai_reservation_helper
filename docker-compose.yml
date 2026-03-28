@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    container_name: ai-reservation-helper
+    restart: unless-stopped
+    ports:
+      - "${FLASK_PORT:-80}:${FLASK_PORT:-80}"
+    env_file:
+      - .env
+    volumes:
+      - db-data:/app/data
+      - records-data:/app/records
+    environment:
+      - DB_FILE=data/db.db
+      - RECORDS_DIR=records
+
+volumes:
+  db-data:
+  records-data:

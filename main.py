@@ -5,32 +5,41 @@ import threading
 import requests
 import xml.etree.ElementTree as ET
 import sqlite3
+from dotenv import load_dotenv
 from openai import OpenAI
 from flask import Flask, request, jsonify
 import telebot
 from telebot import types
 
+load_dotenv()
+
 app = Flask(__name__)
-ATS_TOKEN = ''
-phone_ats = 7777777777
-OPENAI_API_KEY = ''
-DB_FILE = "db.db"
-TELEGRAM_TOKEN = ''
+
+ATS_TOKEN = os.environ.get('ATS_TOKEN', '')
+phone_ats = int(os.environ.get('PHONE_ATS', '7777777777'))
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+DB_FILE = os.environ.get('DB_FILE', 'db.db')
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '')
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = OpenAI(api_key=OPENAI_API_KEY)
-apiUrlInstance = ''
-idInstance = ''
-apiTokenInstance = ''
-phoneNumber = 7777777777
-POLL_INTERVAL = 10  # Интервал проверки (сек)
-SUBSCRIPTION_LIFETIME = 86400  # Срок действия подписки в секундах (24 часа)
+apiUrlInstance = os.environ.get('GREEN_API_URL', '')
+idInstance = os.environ.get('GREEN_API_ID_INSTANCE', '')
+apiTokenInstance = os.environ.get('GREEN_API_TOKEN', '')
+phoneNumber = int(os.environ.get('PHONE_NUMBER', '7777777777'))
+POLL_INTERVAL = int(os.environ.get('POLL_INTERVAL', '10'))
+SUBSCRIPTION_LIFETIME = 86400
 RENEW_THRESHOLD = 300
-ADMIN_ID = 777777777
-HOST = ''
+ADMIN_ID = int(os.environ.get('ADMIN_ID', '0'))
+HOST = os.environ.get('WEBHOOK_HOST', '')
+FLASK_PORT = int(os.environ.get('FLASK_PORT', '80'))
+RECORDS_DIR = os.environ.get('RECORDS_DIR', 'records')
 
 
 def init_db():
     """Создание структуры БД при первом запуске и инициализация настроек."""
+    db_dir = os.path.dirname(DB_FILE)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
@@ -75,7 +84,7 @@ def init_db():
 
 def init_storage():
     """Создание служебных директорий (для записей звонков и пр.)."""
-    os.makedirs("records", exist_ok=True)
+    os.makedirs(RECORDS_DIR, exist_ok=True)
 
 menu_markup = types.InlineKeyboardMarkup(row_width=1)
 back_menu = types.InlineKeyboardMarkup(row_width=1)
@@ -316,7 +325,7 @@ def generateTextFromSMS(message):
 
         try:
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4.1-nano",
                 messages=[
                     {"role": "system",
                      "content": "Ты помощник, который генерирует сообщения бронирования по заданному шаблону."},
@@ -537,7 +546,7 @@ FALSE
     '''
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4.1-nano",
             messages=[
                 {"role": "system",
                  "content": "Ты помощник, который генерирует сообщения бронирования по заданному шаблону."},
@@ -576,7 +585,7 @@ def attempt_download_recording(ext_tracking_id, max_attempts=10, interval=5):
                     f"{ext_tracking_id}/{phone_ats}@ip.beeline.ru/download?"
                     f"extTrackingId={ext_tracking_id}&userId={phone_ats}%40ip.beeline.ru")
     headers = {"X-MPBX-API-AUTH-TOKEN": ATS_TOKEN}
-    file_path = f"records/recording_{ext_tracking_id}.mp3"
+    file_path = os.path.join(RECORDS_DIR, f"recording_{ext_tracking_id}.mp3")
     for attempt in range(1, max_attempts + 1):
         response = requests.get(download_url, headers=headers)
         if response.status_code == 200:
@@ -697,7 +706,7 @@ def handle_event():
 
 
 def run_flask():
-    app.run(host=HOST, port=80)
+    app.run(host='0.0.0.0', port=FLASK_PORT)
 
 
 def run_bot():

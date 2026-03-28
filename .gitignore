@@ -3,24 +3,26 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Виртуальное окружение
+# Virtual environment
 venv/
 .venv/
 
-# Логи и временные файлы
+# Logs and temp files
 *.log
 *.tmp
 
-# Локальная БД и записи разговоров
+# Local DB and call recordings
 db.db
+data/
 records/
 
-# Настройки и секреты
+# Secrets
 .env
+
+# IDE
 .vscode/
 .idea/
 
-# Шрифты и прочие бинарные ассеты (можно настроить при необходимости)
+# Binary assets
 *.ttf
 *.otf
-
